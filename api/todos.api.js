@@ -20,3 +20,9 @@ export const moveTodo = async (id, status) => {
   return res.data;
 };
 
+export const toggleTodoDone = async (id, completed) => {
+  const res = await apiClient.patch(`/todos/${id}`, {
+    completed,
+  });
+  return res.data;
+};

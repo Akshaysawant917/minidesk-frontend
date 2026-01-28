@@ -20,3 +20,8 @@ export const updateNote = async (id, title, content) => {
   });
   return res.data;
 };
+
+export const deleteNote = async (id) => {
+  const res = await apiClient.delete(`/notes/${id}`);
+  return res.data;
+};

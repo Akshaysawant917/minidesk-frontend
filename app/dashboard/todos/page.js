@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getTodos, createTodo, moveTodo } from "@/api/todos.api";
+import {
+  getTodos,
+  createTodo,
+  moveTodo,
+  toggleTodoDone,
+} from "@/api/todos.api";
 
 export default function TodosPage() {
   const [todos, setTodos] = useState({
@@ -63,15 +68,45 @@ export default function TodosPage() {
     }
   };
 
+  const handleToggleDone = async (todo) => {
+    try {
+      await toggleTodoDone(todo.id, !todo.completed);
+      await loadTodos();
+    } catch {
+      setError("Failed to update todo");
+    }
+  };
+
   if (loading) {
     return <p>Loading todos…</p>;
   }
 
+  const renderTodo = (todo, moveHint) => (
+    <li
+      key={todo.id}
+      className="flex items-center gap-2 border border-[var(--border)] rounded p-2 text-sm"
+    >
+      <input
+        type="checkbox"
+        checked={todo.completed}
+        onChange={() => handleToggleDone(todo)}
+      />
+
+      <span
+        onClick={() => handleMove(todo)}
+        title={moveHint}
+        className={`flex-1 cursor-pointer ${
+          todo.completed ? "line-through text-gray-400" : ""
+        }`}
+      >
+        {todo.content}
+      </span>
+    </li>
+  );
+
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-6">
-        Todos
-      </h2>
+      <h2 className="text-xl font-semibold mb-6">Todos</h2>
 
       {/* Create Todo */}
       <div className="mb-6 flex gap-2">
@@ -102,16 +137,12 @@ export default function TodosPage() {
       </div>
 
       {error && (
-        <p className="text-sm text-red-500 mb-4">
-          {error}
-        </p>
+        <p className="text-sm text-red-500 mb-4">{error}</p>
       )}
 
       {/* Today */}
       <section className="mb-6">
-        <h3 className="font-medium mb-2">
-          Today
-        </h3>
+        <h3 className="font-medium mb-2">Today</h3>
 
         {todos.today.length === 0 && (
           <p className="text-sm text-gray-500">
@@ -120,24 +151,15 @@ export default function TodosPage() {
         )}
 
         <ul className="space-y-2">
-          {todos.today.map((todo) => (
-            <li
-              key={todo.id}
-              onClick={() => handleMove(todo)}
-              title="Click to move to Later"
-              className="border border-[var(--border)] rounded p-2 text-sm cursor-pointer hover:bg-gray-50"
-            >
-              {todo.content}
-            </li>
-          ))}
+          {todos.today.map((todo) =>
+            renderTodo(todo, "Click text to move to Later")
+          )}
         </ul>
       </section>
 
       {/* Later */}
       <section>
-        <h3 className="font-medium mb-2">
-          Later
-        </h3>
+        <h3 className="font-medium mb-2">Later</h3>
 
         {todos.later.length === 0 && (
           <p className="text-sm text-gray-500">
@@ -146,16 +168,9 @@ export default function TodosPage() {
         )}
 
         <ul className="space-y-2">
-          {todos.later.map((todo) => (
-            <li
-              key={todo.id}
-              onClick={() => handleMove(todo)}
-              title="Click to move to Today"
-              className="border border-[var(--border)] rounded p-2 text-sm cursor-pointer hover:bg-gray-50"
-            >
-              {todo.content}
-            </li>
-          ))}
+          {todos.later.map((todo) =>
+            renderTodo(todo, "Click text to move to Today")
+          )}
         </ul>
       </section>
     </div>

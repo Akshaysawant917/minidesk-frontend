@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getNotes, createNote } from "@/api/notes.api";
+import {
+  getNotes,
+  createNote,
+  updateNote,
+  deleteNote,
+} from "@/api/notes.api";
 
 export default function NotesPage() {
   const [notes, setNotes] = useState([]);
   const [content, setContent] = useState("");
+  const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
   const loadNotes = async () => {
@@ -28,30 +33,44 @@ export default function NotesPage() {
   const handleCreate = async () => {
     if (!content.trim()) return;
 
-    setCreating(true);
-
     try {
       await createNote(null, content);
       setContent("");
-      await loadNotes(); // refresh list
+      loadNotes();
     } catch {
       setError("Failed to create note");
-    } finally {
-      setCreating(false);
     }
   };
 
-  if (loading) {
-    return <p>Loading notes…</p>;
-  }
+  const handleUpdate = async (id) => {
+    try {
+      await updateNote(id, null, content);
+      setEditingId(null);
+      setContent("");
+      loadNotes();
+    } catch {
+      setError("Failed to update note");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this note?")) return;
+
+    try {
+      await deleteNote(id);
+      loadNotes();
+    } catch {
+      setError("Failed to delete note");
+    }
+  };
+
+  if (loading) return <p>Loading notes…</p>;
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">
-        Notes
-      </h2>
+      <h2 className="text-xl font-semibold mb-4">Notes</h2>
 
-      {/* Create note */}
+      {/* Create / Edit */}
       <div className="mb-6">
         <textarea
           placeholder="Write a note…"
@@ -62,25 +81,14 @@ export default function NotesPage() {
         />
 
         <button
-          onClick={handleCreate}
-          disabled={creating}
-          className="mt-2 bg-[var(--primary)] text-white px-3 py-1 rounded text-sm disabled:opacity-60"
+          onClick={editingId ? () => handleUpdate(editingId) : handleCreate}
+          className="mt-2 bg-[var(--primary)] text-white px-3 py-1 rounded text-sm"
         >
-          {creating ? "Saving…" : "Add note"}
+          {editingId ? "Update note" : "Add note"}
         </button>
       </div>
 
-      {error && (
-        <p className="text-sm text-red-500 mb-4">
-          {error}
-        </p>
-      )}
-
-      {notes.length === 0 && (
-        <p className="text-sm text-gray-500">
-          No notes yet.
-        </p>
-      )}
+      {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
 
       <ul className="space-y-3">
         {notes.map((note) => (
@@ -88,9 +96,26 @@ export default function NotesPage() {
             key={note.id}
             className="border border-[var(--border)] rounded p-3"
           >
-            <p className="text-sm text-gray-700">
-              {note.content}
-            </p>
+            <p className="text-sm mb-2">{note.content}</p>
+
+            <div className="flex gap-3 text-sm">
+              <button
+                onClick={() => {
+                  setEditingId(note.id);
+                  setContent(note.content);
+                }}
+                className="text-blue-600 hover:underline"
+              >
+                Edit
+              </button>
+
+              <button
+                onClick={() => handleDelete(note.id)}
+                className="text-red-600 hover:underline"
+              >
+                Delete
+              </button>
+            </div>
           </li>
         ))}
       </ul>

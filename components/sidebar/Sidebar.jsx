@@ -37,7 +37,7 @@ export default function Sidebar() {
       <div className="flex h-16 items-center justify-between px-6 border-b border-app">
         {!sidebarCollapsed && (
           <h1 className="text-2xl font-display font-semibold tracking-tight animate-fade-in">
-            Atelier
+            MiniDesk
           </h1>
         )}
 
@@ -91,7 +91,7 @@ export default function Sidebar() {
       {!sidebarCollapsed && (
         <div className="border-t border-app p-4 animate-fade-in">
           <p className="text-xs text-muted-foreground font-body">
-            © 2026 Atelier Dashboard
+            © 2026 MiniDesk Dashboard
           </p>
         </div>
       )}
