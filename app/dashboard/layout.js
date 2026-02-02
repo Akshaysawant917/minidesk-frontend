@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDashboardStore } from '@/store/useDashboardStore';
-import Sidebar from "@/components/sidebar/Sidebar";
-import DashboardHeader from "@/components/header/DashboardHeader";
+import Sidebar from "@/components/layout/Sidebar";
+import DashboardHeader from "@/components/layout/DashboardHeader";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();

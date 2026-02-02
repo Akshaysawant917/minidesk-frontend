@@ -1,5 +1,5 @@
 import "./globals.css";
-import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { ThemeProvider } from '@/providers/ThemeProvider';
 
 export const metadata = {
   title: "MiniDesk",

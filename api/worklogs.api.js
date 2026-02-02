@@ -1,8 +1,14 @@
 import { apiClient } from "./client";
 
-export const getWorkLogs = async () => {
-  const res = await apiClient.get("/worklogs");
-  return res.data;
+export const getWorkLogs = async (cursor = null, limit = 10) => {
+  const res = await apiClient.get("/worklogs", {
+    params: {
+      cursor,
+      limit,
+    },
+  });
+
+  return res.data; 
 };
 
 export const createWorkLog = async (content) => {
