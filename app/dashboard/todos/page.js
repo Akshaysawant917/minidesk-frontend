@@ -24,8 +24,9 @@ export default function TodosPage() {
   // STATE
   // --------------------
   const [activeTodos, setActiveTodos] = useState({
-    today: [],
-    later: [],
+    high: [],
+    medium: [],
+    low: [],
   });
 
   const [completed, setCompleted] = useState({
@@ -36,7 +37,8 @@ export default function TodosPage() {
   });
 
   const [text, setText] = useState("");
-  const [status, setStatus] = useState("TODAY");
+  const [status, setStatus] = useState("high");
+  const [tag, setTag] = useState("personal");
 
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -48,8 +50,9 @@ export default function TodosPage() {
   const loadActiveTodos = async () => {
     const data = await getActiveTodos();
     setActiveTodos({
-      today: data.today || [],
-      later: data.later || [],
+      high: data.high || [],
+      medium: data.medium || [],
+      low: data.low || [],
     });
   };
 
@@ -91,18 +94,19 @@ export default function TodosPage() {
     setError("");
 
     try {
-      const todo = await createTodo(text, status);
+      const todo = await createTodo(text, status, tag);
 
-      setActiveTodos((prev) => ({
-        ...prev,
-        [todo.status === "TODAY" ? "today" : "later"]: [
-          todo,
-          ...prev[todo.status === "TODAY" ? "today" : "later"],
-        ],
-      }));
+      setActiveTodos((prev) => {
+        const statusKey = todo.status === "high" ? "high" : todo.status === "medium" ? "medium" : "low";
+        return {
+          ...prev,
+          [statusKey]: [todo, ...prev[statusKey]],
+        };
+      });
 
       setText("");
-      setStatus("TODAY");
+      setStatus("high");
+      setTag("personal");
     } catch {
       setError("Failed to create todo");
     } finally {
@@ -111,20 +115,30 @@ export default function TodosPage() {
   };
 
   const handleMove = async (todo) => {
-    const newStatus = todo.status === "TODAY" ? "LATER" : "TODAY";
+    const nextStatus =
+      todo.status === "high"
+        ? "medium"
+        : todo.status === "medium"
+        ? "high"
+        : "medium";
 
     try {
-      await moveTodo(todo.id, newStatus);
+      const updatedTodo = await moveTodo(todo.id, nextStatus);
+      const mergedTodo = { ...todo, ...updatedTodo, status: nextStatus };
 
       setActiveTodos((prev) => ({
-        today:
-          newStatus === "TODAY"
-            ? [todo, ...prev.today]
-            : prev.today.filter((t) => t.id !== todo.id),
-        later:
-          newStatus === "LATER"
-            ? [todo, ...prev.later]
-            : prev.later.filter((t) => t.id !== todo.id),
+        high:
+          nextStatus === "high"
+            ? [mergedTodo, ...prev.high]
+            : prev.high.filter((t) => t.id !== todo.id),
+        medium:
+          nextStatus === "medium"
+            ? [mergedTodo, ...prev.medium]
+            : prev.medium.filter((t) => t.id !== todo.id),
+        low:
+          nextStatus === "low"
+            ? [mergedTodo, ...prev.low]
+            : prev.low.filter((t) => t.id !== todo.id),
       }));
     } catch {
       setError("Failed to move todo");
@@ -137,8 +151,9 @@ export default function TodosPage() {
 
       // remove from active
       setActiveTodos((prev) => ({
-        today: prev.today.filter((t) => t.id !== todo.id),
-        later: prev.later.filter((t) => t.id !== todo.id),
+        high: prev.high.filter((t) => t.id !== todo.id),
+        medium: prev.medium.filter((t) => t.id !== todo.id),
+        low: prev.low.filter((t) => t.id !== todo.id),
       }));
 
       // add to completed (top)
@@ -180,8 +195,9 @@ export default function TodosPage() {
     );
   }
 
-  const totalToday = activeTodos.today.length;
-  const totalLater = activeTodos.later.length;
+  const totalHigh = activeTodos.high.length;
+  const totalMedium = activeTodos.medium.length;
+  const totalLow = activeTodos.low.length;
   const totalCompleted = completed.items.length;
 
   const renderActiveTodo = (todo, moveHint, targetList) => (
@@ -218,19 +234,24 @@ export default function TodosPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-primary mb-2">Tasks</h2>
-          <p className="text-app/60">Focus on today, park the rest</p>
+          <p className="text-app/60">Prioritize and focus on what matters</p>
         </div>
 
         {/* Stats */}
         <div className="flex items-center gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{totalToday}</div>
-            <div className="text-xs text-app/50">Today</div>
+            <div className="text-2xl font-bold text-primary">{totalHigh}</div>
+            <div className="text-xs text-app/50">High</div>
           </div>
           <div className="w-px h-8 bg-app/20"></div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-app/60">{totalLater}</div>
-            <div className="text-xs text-app/50">Later</div>
+            <div className="text-2xl font-bold text-app/60">{totalMedium}</div>
+            <div className="text-xs text-app/50">Medium</div>
+          </div>
+          <div className="w-px h-8 bg-app/20"></div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-app/60">{totalLow}</div>
+            <div className="text-xs text-app/50">Low</div>
           </div>
           <div className="w-px h-8 bg-app/20"></div>
           <div className="text-center">
@@ -258,12 +279,24 @@ export default function TodosPage() {
           </div>
 
           <select
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+            className="bg-app border border-app rounded-lg px-4 py-3 text-app focus:outline-none focus:border-primary transition-colors cursor-pointer"
+          >
+            <option value="personal">Personal</option>
+            <option value="freelance">Freelance</option>
+            <option value="work">Work</option>
+            <option value="project1">Project1</option>
+          </select>
+
+          <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             className="bg-app border border-app rounded-lg px-4 py-3 text-app focus:outline-none focus:border-primary transition-colors cursor-pointer"
           >
-            <option value="TODAY">Today</option>
-            <option value="LATER">Later</option>
+            <option value="high">High Priority</option>
+            <option value="medium">Medium Priority</option>
+            <option value="low">Low Priority</option>
           </select>
 
           <button
@@ -283,8 +316,8 @@ export default function TodosPage() {
         )}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Today Section */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* High Priority Section */}
         <section className="bg-app border border-app rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -292,33 +325,33 @@ export default function TodosPage() {
                 <Calendar className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-primary">Today</h3>
+                <h3 className="text-xl font-semibold text-primary">High Priority</h3>
                 <p className="text-xs text-app/50">What matters now</p>
               </div>
             </div>
             <span className="text-sm px-3 py-1 bg-secondary rounded-full text-app/70">
-              {totalToday} {totalToday === 1 ? 'task' : 'tasks'}
+              {totalHigh} {totalHigh === 1 ? 'task' : 'tasks'}
             </span>
           </div>
 
-          {activeTodos.today.length === 0 ? (
+          {activeTodos.high.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-3">
                 <Calendar className="w-8 h-8 text-app/30" />
               </div>
-              <p className="text-app/50 text-sm">No tasks for today</p>
+              <p className="text-app/50 text-sm">No high priority tasks</p>
               <p className="text-app/30 text-xs mt-1">You're all clear! ✨</p>
             </div>
           ) : (
             <ul className="space-y-2">
-              {activeTodos.today.map((todo) =>
-                renderActiveTodo(todo, "Move to Later", "Later")
+              {activeTodos.high.map((todo) =>
+                renderActiveTodo(todo, "Move to Medium", "Medium")
               )}
             </ul>
           )}
         </section>
 
-        {/* Later Section */}
+        {/* Medium Priority Section */}
         <section className="bg-app border border-app rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -326,27 +359,61 @@ export default function TodosPage() {
                 <Clock className="w-5 h-5 text-blue-500" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-primary">Later</h3>
+                <h3 className="text-xl font-semibold text-primary">Medium Priority</h3>
                 <p className="text-xs text-app/50">For another time</p>
               </div>
             </div>
             <span className="text-sm px-3 py-1 bg-secondary rounded-full text-app/70">
-              {totalLater} {totalLater === 1 ? 'task' : 'tasks'}
+              {totalMedium} {totalMedium === 1 ? 'task' : 'tasks'}
             </span>
           </div>
 
-          {activeTodos.later.length === 0 ? (
+          {activeTodos.medium.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-3">
                 <Clock className="w-8 h-8 text-app/30" />
               </div>
-              <p className="text-app/50 text-sm">Nothing parked here</p>
+              <p className="text-app/50 text-sm">No medium priority tasks</p>
               <p className="text-app/30 text-xs mt-1">Keep it clear 🎯</p>
             </div>
           ) : (
             <ul className="space-y-2">
-              {activeTodos.later.map((todo) =>
-                renderActiveTodo(todo, "Move to Today", "Today")
+              {activeTodos.medium.map((todo) =>
+                renderActiveTodo(todo, "Move to High", "High")
+              )}
+            </ul>
+          )}
+        </section>
+
+        {/* Low Priority Section */}
+        <section className="bg-app border border-app rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-gray-500/10 rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-gray-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-primary">Low Priority</h3>
+                <p className="text-xs text-app/50">When you have time</p>
+              </div>
+            </div>
+            <span className="text-sm px-3 py-1 bg-secondary rounded-full text-app/70">
+              {totalLow} {totalLow === 1 ? 'task' : 'tasks'}
+            </span>
+          </div>
+
+          {activeTodos.low.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-8 h-8 text-app/30" />
+              </div>
+              <p className="text-app/50 text-sm">No low priority tasks</p>
+              <p className="text-app/30 text-xs mt-1">Nice and clear! 🌟</p>
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {activeTodos.low.map((todo) =>
+                renderActiveTodo(todo, "Move to Medium", "Medium")
               )}
             </ul>
           )}

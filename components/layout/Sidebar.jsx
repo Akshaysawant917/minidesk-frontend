@@ -13,8 +13,10 @@ import {
   Briefcase,
   Key,
   File,
+  Terminal,
   ChevronLeft,
   ChevronRight,
+  BriefcaseBusiness,
 } from "lucide-react";
 
 import { useDashboardStore } from "@/store/useDashboardStore";
@@ -25,11 +27,13 @@ const mainNavigation = [
   { name: "Tasks", href: "/dashboard/todos", icon: Layers },
   { name: "Notes", href: "/dashboard/notes", icon: FileText },
   { name: "Worklogs", href: "/dashboard/worklogs", icon: Clock },
+  { name: "Commands",href: "/dashboard/commands", icon: Terminal },
+  { name: "Bookmarks",href: "/dashboard/bookmarks", icon: Bookmark },
+  { name: "Job Tracker",href: "/dashboard/jobs", icon: BriefcaseBusiness, },
 
   // 🚧 Coming Soon
-  { name: "Secret Notes", icon: Lock, comingSoon: true },
-  { name: "Bookmarks", icon: Bookmark, comingSoon: true },
-  { name: "Job Tracker", icon: Briefcase, comingSoon: true },
+  // { name: "Secret Notes", icon: Lock, comingSoon: true },
+
   { name: "Documents Vault", icon: File, comingSoon: true },
   // { name: "Password Vault", icon: Key, comingSoon: true },
 ];

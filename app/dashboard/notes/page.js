@@ -21,6 +21,7 @@ import {
 
 export default function NotesPage() {
   const [notes, setNotes] = useState([]);
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [editingId, setEditingId] = useState(null);
 
@@ -73,14 +74,15 @@ export default function NotesPage() {
   /* ---------------- Create ---------------- */
 
   const handleCreate = async () => {
-    if (!content.trim()) return;
+    if (!title.trim() || !content.trim()) return;
 
     setSaving(true);
     setError("");
 
     try {
-      const newNote = await createNote(null, content);
+      const newNote = await createNote(title, content);
       setNotes((prev) => [newNote, ...prev]);
+      setTitle("");
       setContent("");
     } catch {
       setError("Failed to create note");
@@ -92,19 +94,20 @@ export default function NotesPage() {
   /* ---------------- Update ---------------- */
 
   const handleUpdate = async (id) => {
-    if (!content.trim()) return;
+    if (!title.trim() || !content.trim()) return;
 
     setSaving(true);
     setError("");
 
     try {
-      const updated = await updateNote(id, null, content);
+      const updated = await updateNote(id, title, content);
 
       setNotes((prev) =>
         prev.map((n) => (n.id === id ? updated : n))
       );
 
       setEditingId(null);
+      setTitle("");
       setContent("");
     } catch {
       setError("Failed to update note");
@@ -115,6 +118,7 @@ export default function NotesPage() {
 
   const handleCancelEdit = () => {
     setEditingId(null);
+    setTitle("");
     setContent("");
     setError("");
   };
@@ -168,10 +172,18 @@ export default function NotesPage() {
           <h3 className="font-semibold text-primary">
             {editingId ? "Edit Note" : "New Note"}
           </h3>
-          {content.trim() && (
+          {(title.trim() || content.trim()) && (
             <Sparkles className="w-4 h-4 text-primary/50 ml-auto" />
           )}
         </div>
+
+        <input
+          type="text"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full mb-3 bg-app border border-app rounded-lg p-4 text-app placeholder:text-app/40 focus:outline-none focus:border-primary transition-colors"
+        />
 
         <textarea
           placeholder="Note down your thoughts..."
@@ -185,7 +197,7 @@ export default function NotesPage() {
         <div className="flex items-center gap-3 mt-3">
           <button
             onClick={editingId ? () => handleUpdate(editingId) : handleCreate}
-            disabled={!content.trim() || saving}
+            disabled={!title.trim() || !content.trim() || saving}
             className="flex items-center gap-2 bg-primary text-secondary   px-6 py-2.5 rounded-lg font-medium  disabled:cursor-not-allowed transition-all"
           >
             {editingId ? (
@@ -250,6 +262,12 @@ export default function NotesPage() {
               >
                 <div className="flex items-start gap-4">
                   <div className="flex-1">
+                    {note.title && (
+                      <h4 className="text-lg font-semibold text-primary mb-2">
+                        {note.title}
+                      </h4>
+                    )}
+
                     <p className="text-app/90 leading-relaxed whitespace-pre-wrap break-words">
                       {note.content}
                     </p>
@@ -272,6 +290,7 @@ export default function NotesPage() {
                     <button
                       onClick={() => {
                         setEditingId(note.id);
+                        setTitle(note.title || "");
                         setContent(note.content);
                         setError("");
                         // Scroll to top

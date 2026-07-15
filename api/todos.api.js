@@ -14,10 +14,11 @@ export const getCompletedTodos = async (cursor, limit = 10) => {
   return res.data;
 };
 
-export const createTodo = async (content, status) => {
+export const createTodo = async (content, status, tag) => {
   const res = await apiClient.post("/todos", {
     content,
     status,
+    tag,
   });
   return res.data;
 };

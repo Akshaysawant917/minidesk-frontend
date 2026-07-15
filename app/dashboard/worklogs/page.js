@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   getWorkLogs,
   createWorkLog,
@@ -21,6 +21,8 @@ export default function WorkLogsPage() {
   const [logs, setLogs] = useState([]);
   const [content, setContent] = useState("");
   const [todayLogId, setTodayLogId] = useState(null);
+
+  const textareaRef = useRef(null);
 
   const [cursor, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(true);
@@ -74,6 +76,73 @@ export default function WorkLogsPage() {
     return new Date(dateStr).getDate();
   };
 
+  /* ---------- Editor Helpers (bullet list behavior) ---------- */
+
+  const renderLogContent = (text) => {
+    if (!text) return null;
+    const lines = text.split(/\r?\n/).map((l) => l.trim());
+    const hasBullets = lines.some((l) => l.startsWith("-"));
+
+    if (hasBullets) {
+      return (
+        <ul className="list-disc pl-5 space-y-1">
+          {lines
+            .filter((l) => l.length > 0)
+            .map((l, i) => (
+              <li key={i} className="text-app/80">
+                {l.replace(/^-+\s*/, "")}
+              </li>
+            ))}
+        </ul>
+      );
+    }
+
+    return (
+      <p className="text-app/80 leading-relaxed whitespace-pre-wrap break-words">
+        {text}
+      </p>
+    );
+  };
+
+  const handleEditorFocus = (e) => {
+    // ensure initial bullet exists when editor is empty
+    if (!content || !content.replace(/[\-\s\r\n]+/g, "").trim()) {
+      setContent("- ");
+
+      // place caret at end after React updates
+      setTimeout(() => {
+        const el = textareaRef.current || (e && e.target);
+        if (el) {
+          el.focus();
+          const pos = el.value.length;
+          el.selectionStart = el.selectionEnd = pos;
+        }
+      }, 0);
+    }
+  };
+
+  const handleEditorKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const el = textareaRef.current || e.target;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+
+      const insert = "\n- ";
+      const newValue = content.slice(0, start) + insert + content.slice(end);
+      setContent(newValue);
+
+      // move caret after the inserted bullet
+      setTimeout(() => {
+        try {
+          const target = textareaRef.current || el;
+          target.selectionStart = target.selectionEnd = start + insert.length;
+          target.focus();
+        } catch (err) {}
+      }, 0);
+    }
+  };
+
   /* ---------- Initial Load ---------- */
 
   const loadLogs = async () => {
@@ -92,7 +161,7 @@ export default function WorkLogsPage() {
         setContent(todayLog.content);
       } else {
         setTodayLogId(null);
-        setContent("");
+        setContent("- ");
       }
     } catch {
       setError("Failed to load work logs");
@@ -127,7 +196,8 @@ export default function WorkLogsPage() {
   /* ---------- Save Today Log ---------- */
 
   const handleSave = async () => {
-    if (!content.trim()) return;
+    // don't save if there's no meaningful text (only bullets/spaces)
+    if (!content.replace(/[-\s\r\n]+/g, "").trim()) return;
 
     setSaving(true);
     setError("");
@@ -227,6 +297,9 @@ export default function WorkLogsPage() {
           placeholder="What did you work on today? What went well? What could be better?"
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleEditorKeyDown}
+          onFocus={handleEditorFocus}
+          ref={textareaRef}
           rows={6}
           className="w-full bg-app border border-app rounded-lg p-4 text-app placeholder:text-app/40 focus:outline-none focus:border-primary transition-colors resize-none"
           autoFocus
@@ -235,7 +308,7 @@ export default function WorkLogsPage() {
         <div className="flex items-center gap-3 mt-4">
           <button
             onClick={handleSave}
-            disabled={saving || !content.trim()}
+              disabled={saving || !content.replace(/[-\s\r\n]+/g, "").trim()}
             className="flex items-center gap-2 bg-primary text-secondary px-6 py-2.5 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <Save className="w-4 h-4" />
@@ -313,9 +386,7 @@ export default function WorkLogsPage() {
                           })}
                         </span>
                       </div>
-                      <p className="text-app/80 leading-relaxed whitespace-pre-wrap break-words">
-                        {log.content}
-                      </p>
+                      {renderLogContent(log.content)}
                     </div>
                   </div>
                 </div>

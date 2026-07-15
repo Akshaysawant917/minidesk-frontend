@@ -77,7 +77,7 @@ export default function DashboardPage() {
         <div className="relative z-10">
           <h1 className="text-4xl font-bold mb-2">{dayName} 👋</h1>
           <p className="text-app/80 text-lg mb-1">{dateStr}</p>
-          <p className="text-app/60">Your calm workspace for today</p>
+          <p className="text-app/60">Prioritize and manage your work effectively</p>
         </div>
       </div>
 
@@ -85,7 +85,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={CheckCircle2}
-          label="Today's Tasks"
+          label="High Priority Tasks"
           value={todayCount}
           sub={`${todayCount} pending`}
           color="emerald"
@@ -111,12 +111,12 @@ export default function DashboardPage() {
       {/* Main Grid */}
       <div className="grid gap-6 lg:grid-cols-3">
 
-        {/* Today Todos */}
+        {/* High Priority Todos */}
         <div className="bg-app border border-app rounded-xl p-6 hover:border-primary/30 transition-all">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-semibold text-primary flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5" />
-              Today's Focus
+              High Priority
             </h3>
             <span className="text-xs bg-secondary px-3 py-1 rounded-full text-app/70">
               {todayCount} tasks
@@ -128,8 +128,8 @@ export default function DashboardPage() {
               <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-3">
                 <CheckCircle2 className="w-8 h-8 text-app/30" />
               </div>
-              <p className="text-app/50 text-sm">No tasks for today</p>
-              <p className="text-app/30 text-xs mt-1">Time to add something!</p>
+              <p className="text-app/50 text-sm">No high priority tasks</p>
+              <p className="text-app/30 text-xs mt-1">Perfect! Everything is under control</p>
             </div>
           ) : (
             <ul className="space-y-2">
@@ -149,7 +149,7 @@ export default function DashboardPage() {
               className="text-xs text-primary text-center mt-4 cursor-pointer hover:underline"
               onClick={() => router.push("/dashboard/todos")}
             >
-              View all today’s tasks →
+              View all high priority tasks →
             </p>
           )}
         </div>
