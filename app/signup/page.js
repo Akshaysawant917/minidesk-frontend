@@ -6,27 +6,31 @@ import Nav from '@/components/home/Nav';
 import Footer from '@/components/home/Footer';
 
 export default function SignupPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!username || !password) {
-      setError("Username and password are required");
+    if (!email || !password) {
+      setError("Email and password are required");
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError("Please enter a valid email");
       return;
     }
 
     setLoading(true);
 
     try {
-      await signup(username, password);
-
-      // success → go to login
-      window.location.href = "/login";
+      await signup(email, password);
+      setSignupSuccess(true);
     } catch (err) {
       if (err.response?.data?.error) {
         setError(err.response.data.error);
@@ -37,6 +41,31 @@ export default function SignupPage() {
       setLoading(false);
     }
   };
+
+  if (signupSuccess) {
+    return (
+      <>
+        <Nav />
+        <main className="min-h-screen flex items-center justify-center bg-[var(--background)]">
+          <div className="w-full max-w-sm border border-[var(--border)] rounded p-6 text-center">
+            <h1 className="text-2xl font-semibold mb-4 text-primary">
+              Check your email
+            </h1>
+            <p className="text-primary mb-4">
+              We've sent a verification link to <strong>{email}</strong>
+            </p>
+            <p className="text-sm text-primary/70 mb-6">
+              Click the link in the email to verify your account and get started.
+            </p>
+            <a href="/login" className="text-[var(--primary)] hover:underline">
+              Back to login
+            </a>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
@@ -50,10 +79,10 @@ export default function SignupPage() {
           <form onSubmit={handleSignup} className="space-y-4">
       
             <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-[var(--border)] rounded px-3 py-2 outline-none text-primary"
             />
 

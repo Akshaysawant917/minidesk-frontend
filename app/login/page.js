@@ -7,7 +7,7 @@ import Footer from '@/components/home/Footer';
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,15 +24,15 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    if (!username || !password) {
-      setError("Username and password are required");
+    if (!email || !password) {
+      setError("Email and password are required");
       return;
     }
 
     setLoading(true);
 
     try {
-      const data = await login(username, password);
+      const data = await login(email, password);
 
       // store JWT
       localStorage.setItem("token", data.token);
@@ -61,10 +61,10 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-[var(--border)] rounded px-3 py-2 outline-none text-primary"
             />
 
