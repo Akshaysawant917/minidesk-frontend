@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 export const useDashboardStore = create(
   persist(
     (set) => ({
-      theme: 'dark',
+      theme: 'light',
       sidebarCollapsed: false,
       toggleTheme: () =>
         set((state) => ({
