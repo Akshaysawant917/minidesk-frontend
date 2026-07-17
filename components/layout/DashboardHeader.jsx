@@ -71,7 +71,7 @@ export default function DashboardHeader() {
               <User className="h-4 w-4 text-primary-foreground" />
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-sm font-medium">Akshay</p>
+              <p className="text-sm font-medium">User</p>
               {/* <p className="text-xs text-muted-foreground">Admin</p> */}
             </div>
           </button>
