@@ -2,8 +2,8 @@ import axios from "axios";
 
 export const apiClient = axios.create({
   // baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-   baseURL: "http://localhost:4000/api",
-  // baseURL:"https://minidesk-backend-production.up.railway.app/api/",
+  //  baseURL: "http://localhost:4000/api",
+  baseURL:"https://minidesk-backend-production.up.railway.app/api/",
   headers: {
     "Content-Type": "application/json",
   },
