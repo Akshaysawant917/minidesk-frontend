@@ -32,6 +32,7 @@ export default function NotesPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [expandedNotes, setExpandedNotes] = useState({});
 
   /* ---------------- Initial Load ---------------- */
 
@@ -121,6 +122,13 @@ export default function NotesPage() {
     setTitle("");
     setContent("");
     setError("");
+  };
+
+  const toggleNoteExpand = (id) => {
+    setExpandedNotes((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   };
 
   /* ---------------- Delete ---------------- */
@@ -251,39 +259,56 @@ export default function NotesPage() {
       ) : (
         <>
           <div className="space-y-3">
-            {notes.map((note) => (
-              <div
-                key={note.id}
-                className={`group bg-app border rounded-xl p-5 transition-all ${
-                  editingId === note.id
-                    ? "border-primary/50 shadow-lg"
-                    : "border-app hover:border-primary/30 hover:shadow-md"
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-1">
-                    {note.title && (
-                      <h4 className="text-lg font-semibold text-primary mb-2">
-                        {note.title}
-                      </h4>
-                    )}
+            {notes.map((note) => {
+              const isExpanded = !!expandedNotes[note.id];
+              const shouldTruncate = (note.content || "").length > 220;
+              const displayContent = shouldTruncate && !isExpanded
+                ? `${(note.content || "").slice(0, 220).trimEnd()}...`
+                : note.content;
 
-                    <p className="text-app/90 leading-relaxed whitespace-pre-wrap break-words">
-                      {note.content}
-                    </p>
+              return (
+                <div
+                  key={note.id}
+                  className={`group bg-app border rounded-xl p-5 transition-all ${
+                    editingId === note.id
+                      ? "border-primary/50 shadow-lg"
+                      : "border-app hover:border-primary/30 hover:shadow-md"
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1">
+                      {note.title && (
+                        <h4 className="text-lg font-semibold text-primary mb-2">
+                          {note.title}
+                        </h4>
+                      )}
 
-                    {note.createdAt && (
-                      <p className="text-xs text-app/40 mt-3">
-                        {new Date(note.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                      <p className="text-app/90 leading-relaxed whitespace-pre-wrap break-words">
+                        {displayContent}
                       </p>
-                    )}
-                  </div>
+
+                      {shouldTruncate && (
+                        <button
+                          onClick={() => toggleNoteExpand(note.id)}
+                          className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary transition-all hover:bg-primary hover:text-secondary"
+                        >
+                          <span>{isExpanded ? "Show less" : "Show more"}</span>
+                          <span className="text-xs">{isExpanded ? "▲" : "▼"}</span>
+                        </button>
+                      )}
+
+                      {note.createdAt && (
+                        <p className="text-xs text-app/40 mt-3">
+                          {new Date(note.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      )}
+                    </div>
 
                   {/* Actions */}
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -309,10 +334,11 @@ export default function NotesPage() {
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Load More */}

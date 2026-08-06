@@ -200,10 +200,23 @@ export default function TodosPage() {
   const totalLow = activeTodos.low.length;
   const totalCompleted = completed.items.length;
 
+  const getTagBorderClass = (tag) => {
+    switch (tag) {
+      case "work":
+        return "border-blue-500/50";
+      case "freelance":
+        return "border-purple-500/50";
+      case "project1":
+        return "border-amber-500/50";
+      default:
+        return "border-primary/40";
+    }
+  };
+
   const renderActiveTodo = (todo, moveHint, targetList) => (
     <li
       key={todo.id}
-      className="group flex items-center gap-3 p-4 rounded-lg border border-app hover:border-primary/30 bg-secondary/30 hover:bg-secondary/50 transition-all"
+      className={`group flex items-center gap-3 p-4 rounded-lg border ${getTagBorderClass(todo.tag)} hover:border-primary/30 bg-secondary/30 hover:bg-secondary/50 transition-all`}
     >
       <button
         onClick={() => handleToggleDone(todo)}

@@ -8,8 +8,6 @@ import {
   Plus,
   Trash2,
   Link as LinkIcon,
-  ExternalLink,
-  Sparkles,
 } from "lucide-react";
 
 export default function BookmarksPage() {
@@ -21,6 +19,8 @@ export default function BookmarksPage() {
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [error, setError] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null);
 
   /* ---------- Load Bookmarks ---------- */
   const loadBookmarks = async () => {
@@ -37,6 +37,19 @@ export default function BookmarksPage() {
   useEffect(() => {
     loadBookmarks();
   }, []);
+
+  useEffect(() => {
+    const closeMenu = () => setContextMenu(null);
+    window.addEventListener("click", closeMenu);
+    return () => window.removeEventListener("click", closeMenu);
+  }, []);
+
+  const resetForm = () => {
+    setTitle("");
+    setUrl("");
+    setError("");
+    setShowModal(false);
+  };
 
   /* ---------- Create Bookmark ---------- */
   const handleCreate = async (e) => {
@@ -55,8 +68,7 @@ export default function BookmarksPage() {
     try {
       const newBookmark = await createBookmark(title, url);
       setBookmarks((prev) => [newBookmark, ...prev]);
-      setTitle("");
-      setUrl("");
+      resetForm();
     } catch {
       setError("Failed to create bookmark");
     } finally {
@@ -79,14 +91,14 @@ export default function BookmarksPage() {
     }
   };
 
-  /* ---------- Extract Domain from URL ---------- */
-  const getDomain = (urlStr) => {
-    try {
-      const url = new URL(urlStr);
-      return url.hostname.replace("www.", "");
-    } catch {
-      return "bookmark";
-    }
+  const handleContextMenu = (e, bookmark) => {
+    e.preventDefault();
+    setContextMenu({ bookmarkId: bookmark.id, x: e.clientX, y: e.clientY });
+  };
+
+  const handleDeleteFromContext = (id) => {
+    setContextMenu(null);
+    handleDelete(id);
   };
 
   /* ---------- Get Favicon URL ---------- */
@@ -119,74 +131,84 @@ export default function BookmarksPage() {
           <p className="text-app/60">Save and organize your favorite links</p>
         </div>
 
-        {/* Stats */}
-        <div className="text-center">
-          <div className="text-2xl font-bold text-primary">{bookmarks.length}</div>
-          <div className="text-xs text-app/50">Saved</div>
+        <div className="flex items-center gap-3">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary">{bookmarks.length}</div>
+            <div className="text-xs text-app/50">Saved</div>
+          </div>
+          <button
+            onClick={() => {
+              setError("");
+              setShowModal(true);
+            }}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-secondary transition-all hover:opacity-90"
+          >
+            <Plus className="w-4 h-4" />
+            Add Bookmark
+          </button>
         </div>
       </div>
 
-      {/* Add Bookmark Form */}
-      <div className="bg-gradient-to-br from-primary/5 to-transparent p-6 rounded-xl border-2 border-primary/20">
-        <div className="mb-4">
-          <h3 className="text-xl font-semibold text-primary flex items-center gap-2">
-            <Plus className="w-5 h-5" />
-            Add New Bookmark
-          </h3>
-          <p className="text-sm text-app/60 mt-1">Save any link for quick access</p>
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />
+          <div className="relative w-full max-w-md rounded-xl border border-app bg-white p-5 shadow-xl dark:bg-[#0b1220]">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-primary">Add New Bookmark</h3>
+                <p className="text-sm text-app/60">Save a link for quick access</p>
+              </div>
+              <button onClick={() => setShowModal(false)} className="rounded-lg p-2 text-app/60 hover:bg-app/10">
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-app/80">URL</label>
+                <input
+                  type="url"
+                  placeholder="https://example.com"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  className="w-full rounded-lg border border-app bg-app px-4 py-2.5 text-app placeholder:text-app/40 focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-app/80">Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g., GitHub"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full rounded-lg border border-app bg-app px-4 py-2.5 text-app placeholder:text-app/40 focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={creating || !title.trim() || !url.trim()}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-secondary transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  {creating ? "Adding..." : "Save Bookmark"}
+                </button>
+                <button type="button" onClick={() => setShowModal(false)} className="rounded-lg border border-app px-4 py-2.5 text-sm font-medium text-app/70">
+                  Cancel
+                </button>
+              </div>
+
+              {error && (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3">
+                  <p className="text-sm text-red-500">{error}</p>
+                </div>
+              )}
+            </form>
+          </div>
         </div>
-
-        <form onSubmit={handleCreate} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-app/80 mb-2">
-                Title
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., GitHub"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-app border border-app rounded-lg px-4 py-2.5 text-app placeholder:text-app/40 focus:outline-none focus:border-primary transition-colors"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-app/80 mb-2">
-                URL
-              </label>
-              <input
-                type="url"
-                placeholder="https://example.com"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="w-full bg-app border border-app rounded-lg px-4 py-2.5 text-app placeholder:text-app/40 focus:outline-none focus:border-primary transition-colors"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={creating || !title.trim() || !url.trim()}
-              className="flex items-center gap-2 bg-primary text-secondary px-6 py-2.5 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              {creating ? "Adding..." : "Add Bookmark"}
-            </button>
-
-            {(title.trim() || url.trim()) && (
-              <Sparkles className="w-4 h-4 text-primary/50" />
-            )}
-          </div>
-
-          {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <p className="text-sm text-red-500">{error}</p>
-            </div>
-          )}
-        </form>
-      </div>
+      )}
 
       {/* Bookmarks Grid */}
       {bookmarks.length === 0 ? (
@@ -205,20 +227,20 @@ export default function BookmarksPage() {
             <span className="text-sm text-app/50">({bookmarks.length})</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-7 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12">
             {bookmarks.map((bookmark) => (
-              <a
+              <button
                 key={bookmark.id}
-                href={bookmark.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group bg-app border border-app rounded-xl p-5 hover:border-primary/30 hover:shadow-md transition-all"
+                type="button"
+                onClick={() => window.open(bookmark.url, "_blank", "noopener,noreferrer")}
+                onContextMenu={(e) => handleContextMenu(e, bookmark)}
+                className="group aspect-square rounded-md border border-app bg-app/70 p-1 text-center transition-all hover:border-primary/30 hover:bg-app"
               >
-                <div className="flex items-start gap-3 mb-3">
+                <div className="flex h-full flex-col items-center justify-center">
                   <img
                     src={getFaviconUrl(bookmark.url)}
                     alt="favicon"
-                    className="w-10 h-10 rounded-lg flex-shrink-0"
+                    className="h-16 w-16 rounded-md"
                     onError={(e) => {
                       e.target.style.display = "none";
                       if (e.target.nextElementSibling) {
@@ -227,43 +249,35 @@ export default function BookmarksPage() {
                     }}
                   />
                   <div
-                    className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0 hidden"
+                    className="hidden h-7 w-7 items-center justify-center rounded-md bg-primary/10"
                     key={`fallback-${bookmark.id}`}
                   >
-                    <LinkIcon className="w-5 h-5 text-primary" />
+                    <LinkIcon className="h-4 w-4 text-primary" />
                   </div>
 
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDelete(bookmark.id);
-                    }}
-                    disabled={deleting === bookmark.id}
-                    className="ml-auto flex-shrink-0 p-2 rounded-lg text-app/50 hover:text-red-500 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                    aria-label="Delete bookmark"
-                  >
-                    {deleting === bookmark.id ? (
-                      <div className="w-4 h-4 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin"></div>
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </button>
+                  <h4 className="mt-0.5 line-clamp-1 text-[10px] font-semibold text-primary">
+                    {bookmark.title}
+                  </h4>
                 </div>
-
-                <h4 className="font-semibold text-primary mb-1 line-clamp-2 group-hover:text-primary/80">
-                  {bookmark.title}
-                </h4>
-                <p className="text-xs text-app/50 line-clamp-1 group-hover:text-app/60">
-                  {getDomain(bookmark.url)}
-                </p>
-
-                <div className="mt-3 pt-3 border-t border-app/30 flex items-center gap-2 text-xs text-app/40 group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all">
-                  <ExternalLink className="w-3 h-3" />
-                  <span>Open link</span>
-                </div>
-              </a>
+              </button>
             ))}
           </div>
+
+          {contextMenu && (
+            <div
+              className="fixed z-[60] rounded-lg border border-app bg-white p-1.5 shadow-lg dark:bg-[#0b1220]"
+              style={{ top: contextMenu.y, left: contextMenu.x }}
+            >
+              <button
+                type="button"
+                onClick={() => handleDeleteFromContext(contextMenu.bookmarkId)}
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-red-500 transition-all hover:bg-red-500/10"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

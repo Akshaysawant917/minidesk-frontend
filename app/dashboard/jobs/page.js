@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createJob, getJobs, updateJob, deleteJob } from "@/api/jobs.api";
-import Nav from '@/components/home/Nav';
-import Footer from '@/components/home/Footer';
+
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
@@ -208,7 +207,18 @@ export default function JobsPage() {
           </div>
         </div>
 
-        {viewMode === 'table' ? (
+        {jobs.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-app/40 bg-secondary/50 p-10 text-center">
+            <h3 className="text-lg font-semibold text-primary">No jobs yet</h3>
+            <p className="mt-2 text-sm text-app/60">Start by adding your first application to keep everything organized.</p>
+            <button
+              onClick={() => { resetForm(); setShowModal(true); }}
+              className="mt-4 rounded bg-primary px-4 py-2 text-sm font-medium text-secondary"
+            >
+              Add your first job
+            </button>
+          </div>
+        ) : viewMode === 'table' ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
