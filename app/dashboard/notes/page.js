@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createFolder, getFolders } from "@/api/folders.api";
-
-import { Folder, FolderOpen, Plus, X } from "lucide-react";
+import EmptyFoldersState from "@/components/notes/EmptyFoldersState";
+import FolderCard from "@/components/notes/FolderCard";
+import FolderCreateForm from "@/components/notes/FolderCreateForm";
+import { Plus } from "lucide-react";
 
 export default function NotesPage() {
   const router = useRouter();
@@ -81,42 +82,16 @@ export default function NotesPage() {
       </div>
 
       {showFolderInput && (
-        <div className="bg-app border border-app rounded-xl p-4 max-w-lg">
-          <div className="flex items-center gap-2 mb-3">
-            <FolderOpen className="w-4 h-4 text-primary" />
-            <h3 className="font-semibold text-primary">Create folder</h3>
-          </div>
-
-          <input
-            type="text"
-            value={folderName}
-            onChange={(e) => setFolderName(e.target.value)}
-            placeholder="Folder name"
-            className="w-full bg-secondary border border-app rounded-lg p-3 text-app placeholder:text-app/40 focus:outline-none focus:border-primary"
-          />
-
-          <div className="flex items-center gap-3 mt-3">
-            <button
-              type="button"
-              onClick={handleCreateFolder}
-              disabled={!folderName.trim() || creatingFolder}
-              className="rounded-lg bg-primary text-secondary px-4 py-2.5 font-medium disabled:opacity-50 cursor-pointer"
-            >
-              {creatingFolder ? "Creating..." : "Create"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowFolderInput(false);
-                setFolderName("");
-              }}
-              className="p-2 rounded-lg border border-app cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <FolderCreateForm
+          folderName={folderName}
+          setFolderName={setFolderName}
+          creatingFolder={creatingFolder}
+          onCreate={handleCreateFolder}
+          onCancel={() => {
+            setShowFolderInput(false);
+            setFolderName("");
+          }}
+        />
       )}
 
       {error && (
@@ -126,42 +101,11 @@ export default function NotesPage() {
       )}
 
       {folders.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-app rounded-xl bg-app/50">
-          <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-            <Folder className="w-10 h-10 text-app/30" />
-          </div>
-          <h3 className="text-lg font-semibold text-primary mb-2">No folders yet</h3>
-          <p className="text-app/50 mb-6">Create your first folder to start organizing notes.</p>
-          <button
-            type="button"
-            onClick={() => setShowFolderInput(true)}
-            className="inline-flex items-center gap-2 text-primary cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Create folder
-          </button>
-        </div>
+        <EmptyFoldersState onCreate={() => setShowFolderInput(true)} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {folders.map((folder) => (
-            <Link
-              key={folder.id}
-              href={`/dashboard/notes/${encodeURIComponent(folder.name)}?folderId=${folder.id}`}
-              className="group block rounded-xl border border-app bg-app p-5 transition-all hover:border-primary/30 hover:shadow-md"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <Folder className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-primary truncate">{folder.name}</h3>
-                    <p className="text-xs text-app/50 mt-1">Open folder</p>
-                  </div>
-                </div>
-                <span className="text-lg text-app/30 group-hover:text-primary transition-colors">→</span>
-              </div>
-            </Link>
+            <FolderCard key={folder.id} folder={folder} />
           ))}
         </div>
       )}

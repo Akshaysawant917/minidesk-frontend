@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createJob, getJobs, updateJob, deleteJob } from "@/api/jobs.api";
+import EmptyJobsState from "@/components/jobs/EmptyJobsState";
+import JobCardList from "@/components/jobs/JobCardList";
+import JobFormModal from "@/components/jobs/JobFormModal";
+import JobTable from "@/components/jobs/JobTable";
 
 
 export default function JobsPage() {
@@ -152,50 +156,33 @@ export default function JobsPage() {
         </div>
       </div>
 
-      {/* Modal (create/edit) */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />
-          <div className="relative w-full max-w-2xl bg-white dark:bg-[#0b1220] rounded-lg p-6 shadow-lg z-10">
-            <h3 className="font-semibold text-primary mb-3">{editing ? 'Edit Job' : 'Add Job'}</h3>
-            <form onSubmit={editing ? (e) => { e.preventDefault(); handleUpdate(editing.id); } : handleCreate} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="Company" value={company} onChange={(e)=>setCompany(e.target.value)} className="p-3 border rounded" />
-                <input placeholder="Role" value={role} onChange={(e)=>setRole(e.target.value)} className="p-3 border rounded" />
-                <input placeholder="Location" value={location} onChange={(e)=>setLocation(e.target.value)} className="p-3 border rounded" />
-                <input placeholder="Source" value={source} onChange={(e)=>setSource(e.target.value)} className="p-3 border rounded" />
-                <select value={status} onChange={(e)=>setStatus(e.target.value)} className="p-3 border rounded">
-                  <option value="applied">Applied</option>
-                  <option value="interviewing">Interviewing</option>
-                  <option value="offer">Offer</option>
-                  <option value="offer_accepted">Offer Accepted</option>
-                  <option value="offer_rejected">Offer Rejected</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-                <input placeholder="Salary" value={salary} onChange={(e)=>setSalary(e.target.value)} className="p-3 border rounded" />
-                <div className="col-span-1">
-                  <label className="text-sm text-app/60 block mb-1">Application date <span className="text-xs text-app/40">(optional)</span></label>
-                  <input type="date" aria-label="Application date" value={applicationDate} onChange={(e)=>setApplicationDate(e.target.value)} className="w-full p-3 border rounded" />
-                </div>
-
-                <div className="col-span-1">
-                  <label className="text-sm text-app/60 block mb-1">Interview date <span className="text-xs text-app/40">(optional)</span></label>
-                  <input type="date" aria-label="Interview date" value={interviewDate} onChange={(e)=>setInterviewDate(e.target.value)} className="w-full p-3 border rounded" />
-                </div>
-              </div>
-
-              <textarea placeholder="Notes (required)" value={notes} onChange={(e)=>setNotes(e.target.value)} className="w-full p-3 border rounded h-28" />
-
-              {error && <p className="text-sm text-red-500">{error}</p>}
-
-              <div className="flex gap-3">
-                <button type="submit" disabled={saving || !company.trim() || !role.trim() || !location.trim() || !source.trim() || !status.trim() || !notes.trim()} className="bg-primary text-secondary px-4 py-2 rounded">{saving ? 'Saving...' : editing ? 'Update Job' : 'Add Job'}</button>
-                <button type="button" onClick={resetForm} className="px-4 py-2 rounded border">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <JobFormModal
+        show={showModal}
+        editing={editing}
+        company={company}
+        setCompany={setCompany}
+        role={role}
+        setRole={setRole}
+        location={location}
+        setLocation={setLocation}
+        source={source}
+        setSource={setSource}
+        status={status}
+        setStatus={setStatus}
+        notes={notes}
+        setNotes={setNotes}
+        salary={salary}
+        setSalary={setSalary}
+        applicationDate={applicationDate}
+        setApplicationDate={setApplicationDate}
+        interviewDate={interviewDate}
+        setInterviewDate={setInterviewDate}
+        error={error}
+        saving={saving}
+        onSubmit={editing ? (e) => { e.preventDefault(); handleUpdate(editing.id); } : handleCreate}
+        onCancel={resetForm}
+        onCloseBackdrop={() => setShowModal(false)}
+      />
 
       {/* List */}
       <div className="space-y-3">
@@ -208,79 +195,11 @@ export default function JobsPage() {
         </div>
 
         {jobs.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-app/40 bg-secondary/50 p-10 text-center">
-            <h3 className="text-lg font-semibold text-primary">No jobs yet</h3>
-            <p className="mt-2 text-sm text-app/60">Start by adding your first application to keep everything organized.</p>
-            <button
-              onClick={() => { resetForm(); setShowModal(true); }}
-              className="mt-4 rounded bg-primary px-4 py-2 text-sm font-medium text-secondary"
-            >
-              Add your first job
-            </button>
-          </div>
+          <EmptyJobsState onAddJob={() => { resetForm(); setShowModal(true); }} />
         ) : viewMode === 'table' ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="text-sm text-app/60">
-                  <th className="p-3 border-b">Company</th>
-                  <th className="p-3 border-b">Role</th>
-                  <th className="p-3 border-b">Location</th>
-                  <th className="p-3 border-b">Source</th>
-                  <th className="p-3 border-b">Status</th>
-                  <th className="p-3 border-b">Applied</th>
-                  <th className="p-3 border-b">Interview</th>
-                  <th className="p-3 border-b">Salary</th>
-                  <th className="p-3 border-b">Notes</th>
-                  <th className="p-3 border-b">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.map((job) => (
-                  <tr key={job.id} className="align-top border-b">
-                    <td className="p-3 align-top">{job.company}</td>
-                    <td className="p-3 align-top">{job.role}</td>
-                    <td className="p-3 align-top">{job.location}</td>
-                    <td className="p-3 align-top">{job.source}</td>
-                    <td className="p-3 align-top">{job.status}</td>
-                    <td className="p-3 align-top">{job.applicationDate ? new Date(job.applicationDate).toLocaleDateString() : '-'}</td>
-                    <td className="p-3 align-top">{job.interviewDate ? new Date(job.interviewDate).toLocaleDateString() : '-'}</td>
-                    <td className="p-3 align-top">{job.salary || '-'}</td>
-                    <td className="p-3 align-top">{job.notes}</td>
-                    <td className="p-3 align-top">
-                      <div className="flex gap-2">
-                        <button onClick={() => startEdit(job)} className="px-2 py-1 border rounded text-sm">Edit</button>
-                        <button onClick={() => handleDelete(job.id)} className="px-2 py-1 border rounded text-sm text-red-500">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <JobTable jobs={jobs} onEdit={startEdit} onDelete={handleDelete} />
         ) : (
-          jobs.map((job) => (
-            <div key={job.id} className="bg-app border rounded-xl p-4 flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="text-lg font-semibold">{job.company}</h4>
-                  <div className="text-sm text-app/50">{job.role}</div>
-                </div>
-                <div className="text-sm text-app/60 mt-1">{job.location} • {job.source}</div>
-                <div className="text-sm text-app/70 mt-2">{job.notes}</div>
-                {job.applicationDate && <div className="text-xs text-app/50 mt-2">Applied: {new Date(job.applicationDate).toLocaleDateString()}</div>}
-                {job.interviewDate && <div className="text-xs text-app/50">Interview: {new Date(job.interviewDate).toLocaleDateString()}</div>}
-              </div>
-
-              <div className="flex flex-col items-end gap-2">
-                <div className="text-sm text-app/50">{job.status}</div>
-                <div className="flex gap-2">
-                  <button onClick={() => startEdit(job)} className="px-3 py-1 border rounded text-sm">Edit</button>
-                  <button onClick={() => handleDelete(job.id)} className="px-3 py-1 border rounded text-sm text-red-500">Delete</button>
-                </div>
-              </div>
-            </div>
-          ))
+          <JobCardList jobs={jobs} onEdit={startEdit} onDelete={handleDelete} />
         )}
       </div>
 

@@ -32,8 +32,8 @@ export const removeTokenCookie = () => {
 export const apiClient = axios.create({
   // baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
   // baseURL: "http://localhost:4000/api",
-  // baseURL: "https://getminidesk.com/api",
-  baseURL: "/api",
+  baseURL: "https://getminidesk.com/api",
+  // baseURL: "/api",
   // baseURL: "https://minidesk-backend-production.up.railway.app/api/",
   withCredentials: true,
   headers: {
