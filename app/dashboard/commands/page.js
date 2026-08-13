@@ -14,6 +14,7 @@ export default function CommandsPage() {
   const [error, setError] = useState("");
   const [commandText, setCommandText] = useState("");
   const [copied, setCopied] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const loadCommands = async () => {
     try {
@@ -58,6 +59,7 @@ export default function CommandsPage() {
       const cmd = await saveCommand(commandText);
       setCommands((p) => [cmd, ...p]);
       setCommandText("");
+      setIsModalOpen(false);
     } catch {
       setError("Failed to save command");
     } finally {
@@ -104,77 +106,108 @@ export default function CommandsPage() {
           <h2 className="text-3xl font-bold text-primary mb-2">Commands</h2>
           <p className="text-app/60">Save and manage your frequently used commands</p>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-primary">{commands.length}</div>
-          <div className="text-xs text-app/50">Commands</div>
-        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          className="bg-primary text-secondary px-4 py-2.5 rounded-lg font-medium hover:opacity-90 transition-all cursor-pointer"
+        >
+          Add Command
+        </button>
       </div>
 
-      {/* Save Command Form */}
-      <div className="bg-gradient-to-br from-primary/5 to-transparent p-6 rounded-xl border border-app">
-        <h3 className="font-semibold text-primary mb-3">Add Command</h3>
-        <form onSubmit={handleSave} className="space-y-3">
-          <textarea
-            placeholder="Paste your command here..."
-            value={commandText}
-            onChange={(e) => setCommandText(e.target.value)}
-            className="w-full bg-app border border-app rounded-lg p-4 text-app placeholder:text-app/40 focus:outline-none focus:border-primary transition-colors resize-none"
-            rows={3}
-          />
-
-          {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <p className="text-sm text-red-500">{error}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={saving || !commandText.trim()}
-            className="bg-primary text-secondary px-6 py-2.5 rounded-lg font-medium disabled:cursor-not-allowed disabled:opacity-60 transition-all"
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => {
+            setIsModalOpen(false);
+            setError("");
+          }}
+        >
+          <div
+            className="w-full max-w-xl rounded-xl border border-app bg-app p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
           >
-            {saving ? "Saving..." : "Save Command"}
-          </button>
-        </form>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-primary">Add Command</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setError("");
+                }}
+                className="text-app/50 hover:text-primary transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-3">
+              <textarea
+                placeholder="Paste your command here..."
+                value={commandText}
+                onChange={(e) => setCommandText(e.target.value)}
+                className="w-full bg-secondary/10 border border-app rounded-lg p-4 text-app placeholder:text-app/40 focus:outline-none focus:border-primary transition-colors resize-none"
+                rows={5}
+              />
+
+              {error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <p className="text-sm text-red-500">{error}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setError("");
+                  }}
+                  className="px-4 py-2.5 rounded-lg border border-app text-app/70 hover:text-primary transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving || !commandText.trim()}
+                  className="bg-primary text-secondary px-5 py-2.5 rounded-lg font-medium disabled:cursor-not-allowed disabled:opacity-60 transition-all cursor-pointer"
+                >
+                  {saving ? "Saving..." : "Save Command"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between text-sm text-app/50">
+        <span>{commands.length} commands</span>
       </div>
 
-      {/* Commands List */}
       {commands.length === 0 ? (
         <div className="text-center py-16">
           <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
             <Copy className="w-10 h-10 text-app/30" />
           </div>
           <h3 className="text-lg font-semibold text-primary mb-2">No commands yet</h3>
-          <p className="text-app/50">Start saving your favorite commands above</p>
+          <p className="text-app/50">Start saving your favorite commands</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {commands.map((cmd) => (
             <div
               key={cmd.id}
-              className="group bg-app border border-app rounded-lg p-4 hover:border-primary/30 transition-all flex items-start justify-between gap-4"
+              className="group bg-app border border-app rounded-lg p-3 hover:border-primary/30 transition-all flex items-center justify-between gap-3"
             >
-              <div className="flex-1 min-w-0">
-                <code className="text-sm text-app/90 break-all block font-mono bg-secondary/30 p-3 rounded">
-                  {cmd.command}
-                </code>
-                {cmd.createdAt && (
-                  <p className="text-xs text-app/40 mt-2">
-                    {new Date(cmd.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                )}
-              </div>
+              <code className="flex-1 min-w-0 rounded-md bg-secondary/30 px-2 py-2 text-xs text-app/90 break-all font-mono leading-relaxed">
+                {cmd.command}
+              </code>
 
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={() => copyToClipboard(cmd.command, cmd.id)}
-                  className={`p-2 rounded transition-all ${
+                  className={`p-2 rounded transition-all cursor-pointer ${
                     copied === cmd.id
                       ? "bg-emerald-500/10 text-emerald-500"
                       : "text-app/50 hover:text-app hover:bg-secondary"
@@ -186,7 +219,7 @@ export default function CommandsPage() {
 
                 <button
                   onClick={() => handleDelete(cmd.id)}
-                  className="p-2 rounded text-red-500 hover:bg-red-500/10 transition-all"
+                  className="p-2 rounded text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
                   title="Delete command"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -197,9 +230,8 @@ export default function CommandsPage() {
         </div>
       )}
 
-      {/* Load More */}
       {hasMore && (
-        <div className="flex justify-center pt-4">
+        <div className="flex justify-center pt-2">
           <button
             onClick={loadMore}
             disabled={loadingMore}

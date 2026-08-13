@@ -39,6 +39,8 @@ export default function TodosPage() {
   const [text, setText] = useState("");
   const [status, setStatus] = useState("high");
   const [tag, setTag] = useState("personal");
+  const [selectedTag, setSelectedTag] = useState("all");
+  const [menuTodoId, setMenuTodoId] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -47,8 +49,8 @@ export default function TodosPage() {
   // --------------------
   // LOADERS
   // --------------------
-  const loadActiveTodos = async () => {
-    const data = await getActiveTodos();
+  const loadActiveTodos = async (tagFilter = selectedTag) => {
+    const data = await getActiveTodos(tagFilter);
     setActiveTodos({
       high: data.high || [],
       medium: data.medium || [],
@@ -69,8 +71,9 @@ export default function TodosPage() {
   useEffect(() => {
     const load = async () => {
       try {
+        setLoading(true);
         await Promise.all([
-          loadActiveTodos(),
+          loadActiveTodos(selectedTag),
           loadCompletedTodos(),
         ]);
       } catch {
@@ -81,7 +84,7 @@ export default function TodosPage() {
     };
 
     load();
-  }, []);
+  }, [selectedTag]);
 
   // --------------------
   // ACTIONS
@@ -114,32 +117,25 @@ export default function TodosPage() {
     }
   };
 
-  const handleMove = async (todo) => {
-    const nextStatus =
-      todo.status === "high"
-        ? "medium"
-        : todo.status === "medium"
-        ? "high"
-        : "medium";
+  const handleMove = async (todo, targetStatus) => {
+    if (!targetStatus || targetStatus === todo.status) return;
 
     try {
-      const updatedTodo = await moveTodo(todo.id, nextStatus);
-      const mergedTodo = { ...todo, ...updatedTodo, status: nextStatus };
+      const updatedTodo = await moveTodo(todo.id, targetStatus);
+      const mergedTodo = { ...todo, ...updatedTodo, status: targetStatus };
 
-      setActiveTodos((prev) => ({
-        high:
-          nextStatus === "high"
-            ? [mergedTodo, ...prev.high]
-            : prev.high.filter((t) => t.id !== todo.id),
-        medium:
-          nextStatus === "medium"
-            ? [mergedTodo, ...prev.medium]
-            : prev.medium.filter((t) => t.id !== todo.id),
-        low:
-          nextStatus === "low"
-            ? [mergedTodo, ...prev.low]
-            : prev.low.filter((t) => t.id !== todo.id),
-      }));
+      setActiveTodos((prev) => {
+        const nextState = {
+          high: prev.high.filter((t) => t.id !== todo.id),
+          medium: prev.medium.filter((t) => t.id !== todo.id),
+          low: prev.low.filter((t) => t.id !== todo.id),
+        };
+
+        nextState[targetStatus] = [mergedTodo, ...nextState[targetStatus]];
+        return nextState;
+      });
+
+      setMenuTodoId(null);
     } catch {
       setError("Failed to move todo");
     }
@@ -181,20 +177,6 @@ export default function TodosPage() {
     }));
   };
 
-  // --------------------
-  // RENDER
-  // --------------------
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto"></div>
-          <p className="text-app/60">Loading your tasks...</p>
-        </div>
-      </div>
-    );
-  }
-
   const totalHigh = activeTodos.high.length;
   const totalMedium = activeTodos.medium.length;
   const totalLow = activeTodos.low.length;
@@ -213,33 +195,88 @@ export default function TodosPage() {
     }
   };
 
-  const renderActiveTodo = (todo, moveHint, targetList) => (
-    <li
-      key={todo.id}
-      className={`group flex items-center gap-3 p-4 rounded-lg border ${getTagBorderClass(todo.tag)} hover:border-primary/30 bg-secondary/30 hover:bg-secondary/50 transition-all`}
-    >
-      <button
-        onClick={() => handleToggleDone(todo)}
-        className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-app hover:border-emerald-500 hover:bg-emerald-500/10 transition-all flex items-center justify-center group/check"
-        aria-label="Mark as complete"
-      >
-        <CheckCircle2 className="w-4 h-4 text-emerald-500 opacity-0 group-hover/check:opacity-100 transition-opacity" />
-      </button>
+  const getMoveOptions = (status) => {
+    if (status === "high") return ["medium", "low"];
+    if (status === "medium") return ["high", "low"];
+    return ["high", "medium"];
+  };
 
-      <span className="flex-1 text-app/90 group-hover:text-primary transition-colors">
-        {todo.content}
-      </span>
+  useEffect(() => {
+    const handleOutsideClick = () => setMenuTodoId(null);
+    window.addEventListener("click", handleOutsideClick);
+    return () => window.removeEventListener("click", handleOutsideClick);
+  }, []);
 
-      <button
-        onClick={() => handleMove(todo)}
-        title={moveHint}
-        className="flex-shrink-0 flex items-center gap-1 text-xs text-app/50 hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+  // --------------------
+  // RENDER
+  // --------------------
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto"></div>
+          <p className="text-app/60">Loading your tasks...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const renderActiveTodo = (todo) => {
+    const moveOptions = getMoveOptions(todo.status);
+    const isMenuOpen = menuTodoId === todo.id;
+
+    return (
+      <li
+        key={todo.id}
+        className={`group relative flex items-center gap-3 p-4 rounded-lg border ${getTagBorderClass(todo.tag)} hover:border-primary/30 bg-secondary/30 hover:bg-secondary/50 transition-all`}
       >
-        <span>{targetList}</span>
-        <ChevronRight className="w-3 h-3" />
-      </button>
-    </li>
-  );
+        <button
+          onClick={() => handleToggleDone(todo)}
+          className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-app hover:border-emerald-500 hover:bg-emerald-500/10 transition-all flex items-center justify-center group/check"
+          aria-label="Mark as complete"
+        >
+          <CheckCircle2 className="w-4 h-4 text-emerald-500 opacity-0 group-hover/check:opacity-100 transition-opacity" />
+        </button>
+
+        <span className="flex-1 text-app/90 group-hover:text-primary transition-colors">
+          {todo.content}
+        </span>
+
+        <div className="relative" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={() => setMenuTodoId(isMenuOpen ? null : todo.id)}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-app/60 hover:bg-secondary hover:text-primary transition-colors cursor-pointer"
+            aria-label="Open task actions"
+          >
+            <span className="flex flex-col gap-[2px]">
+              <span className="block h-[3px] w-[3px] rounded-full bg-current" />
+              <span className="block h-[3px] w-[3px] rounded-full bg-current" />
+              <span className="block h-[3px] w-[3px] rounded-full bg-current" />
+            </span>
+          </button>
+
+          {isMenuOpen && (
+            <div className="absolute right-0 top-10 z-50 min-w-[130px] rounded-lg border border-app/40 bg-app shadow-xl p-2">
+              <p className="px-2 pb-2 text-[10px] uppercase tracking-wide text-app/40">
+                Move to
+              </p>
+              {moveOptions.map((targetStatus) => (
+                <button
+                  key={targetStatus}
+                  onClick={() => handleMove(todo, targetStatus)}
+                  className="w-full flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm text-app/80 hover:bg-secondary transition-colors cursor-pointer"
+                >
+                  <span className="capitalize">{targetStatus}</span>
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </li>
+    );
+  };
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -249,6 +286,8 @@ export default function TodosPage() {
           <h2 className="text-3xl font-bold text-primary mb-2">Tasks</h2>
           <p className="text-app/60">Prioritize and focus on what matters</p>
         </div>
+
+
 
         {/* Stats */}
         <div className="flex items-center gap-4">
@@ -329,6 +368,23 @@ export default function TodosPage() {
         )}
       </div>
 
+      <div className="flex justify-end">
+        <div className="flex items-center gap-3">
+          <label className="text-sm text-app/60">Filter</label>
+          <select
+            value={selectedTag}
+            onChange={(e) => setSelectedTag(e.target.value)}
+            className="bg-app border border-app rounded-lg px-3 py-2 text-app focus:outline-none focus:border-primary transition-colors cursor-pointer"
+          >
+            <option value="all">All</option>
+            <option value="personal">Personal</option>
+            <option value="freelance">Freelance</option>
+            <option value="work">Work</option>
+            <option value="project1">Project1</option>
+          </select>
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-6">
         {/* High Priority Section */}
         <section className="bg-app border border-app rounded-xl p-6">
@@ -357,9 +413,7 @@ export default function TodosPage() {
             </div>
           ) : (
             <ul className="space-y-2">
-              {activeTodos.high.map((todo) =>
-                renderActiveTodo(todo, "Move to Medium", "Medium")
-              )}
+              {activeTodos.high.map((todo) => renderActiveTodo(todo))}
             </ul>
           )}
         </section>
@@ -391,9 +445,7 @@ export default function TodosPage() {
             </div>
           ) : (
             <ul className="space-y-2">
-              {activeTodos.medium.map((todo) =>
-                renderActiveTodo(todo, "Move to High", "High")
-              )}
+              {activeTodos.medium.map((todo) => renderActiveTodo(todo))}
             </ul>
           )}
         </section>
@@ -425,9 +477,7 @@ export default function TodosPage() {
             </div>
           ) : (
             <ul className="space-y-2">
-              {activeTodos.low.map((todo) =>
-                renderActiveTodo(todo, "Move to Medium", "Medium")
-              )}
+              {activeTodos.low.map((todo) => renderActiveTodo(todo))}
             </ul>
           )}
         </section>

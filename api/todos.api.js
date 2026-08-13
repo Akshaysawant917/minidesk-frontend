@@ -1,7 +1,11 @@
 import { apiClient } from "./client";
 
-export const getActiveTodos = async () => {
-  const res = await apiClient.get("/todos");
+export const getActiveTodos = async (tag = "all") => {
+  const params = new URLSearchParams();
+  if (tag && tag !== "all") params.append("tag", tag);
+
+  const query = params.toString();
+  const res = await apiClient.get(`/todos${query ? `?${query}` : ""}`);
   return res.data;
 };
 
