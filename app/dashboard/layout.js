@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getTokenFromCookie } from "@/api/client";
 import { useDashboardStore } from '@/store/useDashboardStore';
 import Sidebar from "@/components/layout/Sidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
@@ -12,13 +13,14 @@ export default function DashboardLayout({ children }) {
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getTokenFromCookie();
 
     if (!token) {
       router.replace("/login");
-    } else {
-      setCheckingAuth(false);
+      return;
     }
+
+    setCheckingAuth(false);
   }, [router]);
 
   // 🔒 Prevent UI flash

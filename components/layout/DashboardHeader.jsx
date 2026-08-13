@@ -1,6 +1,7 @@
 'use client';
 
 import { Sun, Moon, Bell, Search, User } from 'lucide-react';
+import { removeTokenCookie } from '@/api/client';
 import { useDashboardStore } from '@/store/useDashboardStore';
 // import { DigitalClock } from '@/components/DigitalClock';
 import { useRouter } from "next/navigation";
@@ -9,7 +10,7 @@ export default function DashboardHeader() {
   const { theme, toggleTheme, sidebarCollapsed } = useDashboardStore();
   const router = useRouter();
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    removeTokenCookie();
     router.push("/login");
   };
   const handleProfile = ()=>{

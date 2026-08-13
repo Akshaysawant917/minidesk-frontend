@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { login } from "@/api/auth.api";
+import { getTokenFromCookie, setTokenCookie } from "@/api/client";
 import Nav from '@/components/home/Nav';
 import Footer from '@/components/home/Footer';
 import { useRouter } from "next/navigation";
@@ -15,7 +16,7 @@ export default function LoginPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getTokenFromCookie();
     if (token) {
       router.replace("/dashboard");
     }
@@ -34,11 +35,12 @@ export default function LoginPage() {
 
     try {
       const data = await login(email, password);
+      const token = data?.token || data?.data?.token;
 
-      // store JWT
-      localStorage.setItem("token", data.token);
+      if (token) {
+        setTokenCookie(token);
+      }
 
-      // redirect to dashboard
       router.replace("/dashboard");
     } catch (err) {
       if (err.response?.data?.error) {

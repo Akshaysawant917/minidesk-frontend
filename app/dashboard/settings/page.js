@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getTokenFromCookie, removeTokenCookie } from "@/api/client";
 
 export default function SettingsPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
 
   useEffect(() => {
-    // token payload decode (no library — simple MVP decode)
-    const token = localStorage.getItem("token");
+    const token = getTokenFromCookie();
     if (!token) return;
 
     try {
@@ -23,7 +23,7 @@ export default function SettingsPage() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    removeTokenCookie();
     router.push("/login");
   };
 
@@ -69,7 +69,7 @@ export default function SettingsPage() {
 
         <InfoRow label="Version" value="MVP v1" />
         <InfoRow label="Mode" value="Local-first" />
-        <InfoRow label="Auth" value="JWT (username)" />
+        <InfoRow label="Auth" value="JWT in cookie" />
       </div>
 
       {/* Danger Zone */}
