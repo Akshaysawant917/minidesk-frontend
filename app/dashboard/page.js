@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ArrowUpRight } from "lucide-react";
 import { getDashboardCharts, getDashboardSummary } from "@/api/dashboard.api";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import AskMiniDeskCard from "@/components/dashboard/AskMiniDeskCard";
 import NotesPanel from "@/components/dashboard/NotesPanel";
 import PendingByTagChart from "@/components/dashboard/PendingByTagChart";
 import StatCard from "@/components/dashboard/StatCard";
@@ -15,7 +17,6 @@ import {
   FileText,
   Clock,
   Calendar,
-  Edit3,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -27,6 +28,7 @@ export default function DashboardPage() {
 
   const [todayTodos, setTodayTodos] = useState([]);
   const [todayCount, setTodayCount] = useState(0);
+  const [askInput, setAskInput] = useState("");
 
   const [notes, setNotes] = useState([]);
   const [notesCount, setNotesCount] = useState(0);
@@ -95,9 +97,26 @@ export default function DashboardPage() {
       count: 1,
     }));
 
+  const handleAskMiniDesk = () => {
+    const trimmed = askInput.trim();
+
+    if (trimmed) {
+      router.push(`/dashboard/ai?message=${encodeURIComponent(trimmed)}`);
+      return;
+    }
+
+    router.push("/dashboard/ai");
+  };
+
   return (
     <div className="space-y-2 animate-fadeIn">
       <DashboardHeader />
+
+      <AskMiniDeskCard
+        value={askInput}
+        onChange={setAskInput}
+        onSubmit={handleAskMiniDesk}
+      />
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
